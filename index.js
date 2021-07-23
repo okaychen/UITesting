@@ -1,60 +1,73 @@
-const puppeteer = require('puppeteer');
-const Koa = require('koa');
-const fs = require('fs');
-const app = new Koa();
+const render = require('./lib/render');
+const logger = require('koa-logger');
+const router = require('koa-router')();
+const koaBody = require('koa-body');
 
-// 清空文件&保留文件夹
-const delDir = (path) => {
-    let files = [];
-    if(fs.existsSync(path)){
-        files = fs.readdirSync(path);
-        if (files.length) {
-            files.forEach((file, index) => {
-                let curPath = path + "/" + file;
-                if(fs.statSync(curPath).isDirectory()){
-                    delDir(curPath); //递归删除文件夹
-                } else {
-                    fs.unlinkSync(curPath); //删除文件
-                }
-            });
-        }
-        // fs.rmdirSync(path);
-    }
+const Koa = require('koa');
+const app = module.exports = new Koa();
+
+// "database"
+
+const posts = [];
+
+// middleware
+
+app.use(logger());
+
+app.use(render);
+
+app.use(koaBody());
+
+// route definitions
+
+router.get('/', list)
+  .get('/post/new', add)
+  .get('/post/:id', show)
+  .post('/post', create);
+
+app.use(router.routes());
+
+/**
+ * Post listing.
+ */
+
+async function list(ctx) {
+  await ctx.render('list', { posts: posts });
 }
 
-(async () => {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    // 设置机型
-    // const iPhone = puppeteer.devices['iPhone 11'];
-    // await page.emulate(iPhone);
-    page.setUserAgent('Mozilla/5.0 (Linux; U; Android 4.4.4; zh-cn; R8107 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 OppoBrowser/3.5.1beta Mobile Safari/537.36');
-    //设置可视区域大小
-    await page.setViewport({width: 400, height: 700});
-    const list = [
-        'https://www.baidu.com',
-        'https://mbd.baidu.com/newspage/data/landingshare?preview=1&pageType=1&isBdboxFrom=1&context=%7B%22nid%22%3A%22news_9793809295047300402%22%2C%22sourceFrom%22%3A%22bjh%22%7D&_refluxos=a7',
-        'https://mbd.baidu.com/newspage/data/landingshare?preview=1&pageType=1&isBdboxFrom=1&context=%7B%22nid%22%3A%22news_9793809295047300402%22%2C%22sourceFrom%22%3A%22bjh%22%7D',
-    ]
-    // 清空文件夹
-    delDir('./files');
-    // 遍历需要截图的URL
-    for (let i = 0; i < list.length; i++) {
-        await page.goto(list[i]);
-        await page.waitForTimeout(1500);
-        await page.screenshot({
-            path: `./files/capture${Date.now()}.png`,
-            type: 'png',
-            fullPage: true
-        });
-    }
-    await page.close();
-    await browser.close();
+/**
+ * Show creation form.
+ */
 
-    // node服务
-    app.use(async ctx => {
-        ctx.body = 'Hello World';
-    });
-    app.listen(3000);
-    console.log('running at http://localhost:3000')
-})();
+async function add(ctx) {
+  await ctx.render('new');
+}
+
+/**
+ * Show post :id.
+ */
+
+async function show(ctx) {
+  const id = ctx.params.id;
+  const post = posts[id];
+  if (!post) ctx.throw(404, 'invalid post id');
+  await ctx.render('show', { post: post });
+}
+
+/**
+ * Create a post.
+ */
+
+async function create(ctx) {
+  const post = ctx.request.body;
+  const id = posts.push(post) - 1;
+  post.created_at = new Date();
+  post.id = id;
+  ctx.redirect('/');
+}
+
+// listen
+
+if (!module.parent) app.listen(3000, () => {
+    console.log('server running at http://localhost:3000')
+});
