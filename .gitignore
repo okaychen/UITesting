@@ -1,5 +1,7 @@
 # Referenced from https://github.com/github/gitignore/blob/master/Node.gitignore
 
+./files
+
 # Logs
 logs
 *.log
