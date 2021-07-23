@@ -1,0 +1,29 @@
+{
+  "name": "urlscreenshot",
+  "version": "1.0.0",
+  "description": "url page screen to pdf or image",
+  "main": "puppeteer.js",
+  "scripts": {
+    "test": "mocha --timeout 10000",
+    "build": "babel index.js -d dist",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "screen"
+  ],
+  "author": "okaychen",
+  "license": "MIT",
+  "dependencies": {
+    "fs": "0.0.2",
+    "koa": "^2.13.1",
+    "mocha": "^9.0.0",
+    "node-xlsx": "^0.16.1",
+    "puppeteer": "^10.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.14.8",
+    "@babel/core": "^7.14.8",
+    "@babel/preset-env": "^7.14.8",
+    "nodemon": "^2.0.12"
+  }
+}
